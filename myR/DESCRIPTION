@@ -1,0 +1,13 @@
+Package: myR
+Title: Funcoes do dia a dia
+Version: 0.3
+Authors@R: person("Brunno", "Bittencourt", email = "brunnottb@gmail.com", role = c("aut", "cre"))
+Description: ...
+Depends: R (>= 3.5.0)
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.0
+Imports: magrittr,
+    SDMTools,
+    dplyr

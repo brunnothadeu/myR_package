@@ -1,0 +1,51 @@
+#' @title Calcula uma medida de desempenho em um DF corrigido
+#' @name escore
+#' 
+#' @description Resume um banco de dados gerado pela funcao corrigir, atraves de uma medida de desempenho Escore/Normit.
+#' 
+#' @param dadosCorr Banco de dados corrigido a ser utilizado. Este deve ser composto com os seguintes campos: (ID, CAD, PESO, IT1, ..., ITm).
+#' @param method Metodo de resumo dos dados (Escore ou Normit).
+#' 
+#' @details Etapa Anterior: 'corrigir'.
+#' @details Etapa Posterior: 'tct' , 'agi.plot'.
+#' 
+#' @return DF com a seguinte composicao: (ID, CAD, PESO, IT1, ..., ITn, ..., ITm, Desempenho).
+#' 
+#' @author Brunno Bittencourt
+#' 
+#' @examples 
+#' bib = list(CAD1 = c(1,2), CAD2 = c(2,3), CAD3 = c(3,1))
+#' 
+#' nblocos = 3
+#'
+#' b.len = 2
+#'
+#' resp = data.frame(matrix(sample(c("A", "B", "C"), 40, replace = T), ncol = 4), stringsAsFactors = F); names(resp) = paste0("IT", 1:4)
+#'
+#' dados = cbind(data.frame(ID = 1:10, CAD = paste0("CAD", sample(3, 10, replace = T)), PESO = 1), resp)
+#'
+#' dados = vetor.extendido(dados, bib, nblocos, b.len)
+#' 
+#' dadosCorr = corrigir(dados, c("A", "B", "A", "C", "A", "B"))
+#' 
+#' dadosCorr = escore(dadosCorr)
+#'
+#' @export
+escore <-
+  function(dadosCorr, method = "Escore"){
+    escore = rowSums(dadosCorr[4:ncol(dadosCorr)], na.rm = T)
+    if(method == "Escore"){
+      dadosCorr$Escore = escore
+      return(dadosCorr)
+    }
+    if(method == "Normit"){
+      Escores = aggregate(list(Freq = dadosCorr$PESO), list(escore = escore), FUN = sum)
+      Escores$Freq = cumsum(Escores$Freq)
+      normit = numeric(nrow(dadosCorr))
+      normit[escore == Escores$escore[1]] = qnorm((Escores$Freq[1] + (Escores$Freq[2] / 2)) / (2 * sum(dadosCorr$PESO)))
+      for(j in 2:nrow(Escores))
+        normit[escore == Escores$escore[j]] = qnorm((Escores$Freq[j] + Escores$Freq[j-1]) / (2 * sum(dadosCorr$PESO)))
+      dadosCorr$Normit = normit
+      return(dadosCorr)
+    }  
+  }
