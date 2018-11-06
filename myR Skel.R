@@ -50,19 +50,19 @@ corrigir <-
 
 escore <-
   function(dadosCorr, method = "Escore"){
-    escore = rowSums(dadosCorr[4:ncol(dadosCorr)], na.rm = T)
-    if(method == "Escore"){
-      dadosCorr$Escore = escore
+    escore <- dadosCorr[4:ncol(dadosCorr)] %>% rowSums(na.rm = T)
+    if(tolower(method) == "escore"){
+      dadosCorr$Escore <- escore
       return(dadosCorr)
     }
-    if(method == "Normit"){
-      Escores = aggregate(list(Freq = dadosCorr$PESO), list(escore = escore), FUN = sum)
-      Escores$Freq = cumsum(Escores$Freq)
-      normit = numeric(nrow(dadosCorr))
+    if(tolower(method) == "normit"){
+      Escores <- list(Freq = dadosCorr$PESO) %>% aggregate(list(escore = escore), FUN = sum)
+      Escores$Freq <- Escores$Freq %>% cumsum
+      normit <- dadosCorr %>% nrow %>% numeric
       normit[escore == Escores$escore[1]] = qnorm((Escores$Freq[1] + (Escores$Freq[2] / 2)) / (2 * sum(dadosCorr$PESO)))
       for(j in 2:nrow(Escores))
         normit[escore == Escores$escore[j]] = qnorm((Escores$Freq[j] + Escores$Freq[j-1]) / (2 * sum(dadosCorr$PESO)))
-      dadosCorr$Normit = normit
+      dadosCorr$Normit <- normit
       return(dadosCorr)
     }  
   }
@@ -79,9 +79,21 @@ tct <-
       summ <- summ %>% cbind(matrix(NA, nrow = nrow(summ), ncol = nrow(mapa)))
       names(summ) <- c("Info", paste0("IT", 1:nrow(mapa)))
     }
+    desemp <- dados$Desempenho
     for(it in 1:nrow(TCT)){
       respOn = dadosCorr[[it + 3]] %>% is.na %>% not
-      desemp <- dados$Desempenho - (rep(itemResto, length(dados$Desempenho)) * dadosCorr[[it + 3]])
+      if(!isFALSE(itemResto)){
+        desemp <- rowSums(dadosCorr[-c(1:3, ncol(dadosCorr))], na.rm = T) - dadosCorr[[it + 3]]
+        if(tolower(itemResto) == "normit"){
+          Escores <- list(Freq = dadosCorr$PESO) %>% aggregate(list(escore = desemp), FUN = sum)
+          Escores$Freq <- Escores$Freq %>% cumsum
+          normit <- dadosCorr %>% nrow %>% numeric
+          normit[desemp == Escores$escore[1]] = qnorm((Escores$Freq[1] + (Escores$Freq[2] / 2)) / (2 * sum(dadosCorr$PESO)))
+          for(j in 2:nrow(Escores))
+            normit[desemp == Escores$escore[j]] = qnorm((Escores$Freq[j] + Escores$Freq[j-1]) / (2 * sum(dadosCorr$PESO)))
+          desemp <- normit
+        }
+      }
       if(sdpop){
         sd <- sqrt(sum(dados$PESO[respOn] * ((desemp[respOn] - weighted.mean(desemp[respOn], dados$PESO[respOn]))^2)) / sum(dados$PESO[respOn]))
       }else{
