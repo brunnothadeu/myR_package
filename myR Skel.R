@@ -69,67 +69,70 @@ escore <-
 
 tct <-
   function(dados, dadosCorr, mapa, Alts = c("A", "B", "C", "D", "E", "*", "."), pbis = FALSE, itemResto = FALSE, arred = 10, sdpop = FALSE, crit = c(0.16, 0.1, 0), summary = FALSE){
-    TCT = data.frame(matrix(NA, nrow = ncol(dados) - 4, ncol = ncol(mapa) + 6 + length(Alts) * 2))
-    names(TCT) = c(names(mapa), "Dif", "Disc", "Abai", "Acim", "Bis", paste0(rep(c("Perc", "Bis"), each = length(Alts)), Alts), "Status")
-    TCT[1:ncol(mapa)] = mapa
-    names(dadosCorr)[ncol(dadosCorr)] = names(dados)[ncol(dados)] = "Desempenho"
+    TCT <- matrix(NA, nrow = ncol(dados) - 4, ncol = ncol(mapa) + 6 + length(Alts) * 2) %>% data.frame
+    names(TCT) <- c(names(mapa), "Dif", "Disc", "Abai", "Acim", "Bis", paste0(rep(c("Perc", "Bis"), each = length(Alts)), Alts), "Status")
+    TCT[1:ncol(mapa)] <- mapa
+    names(dadosCorr)[ncol(dadosCorr)] <- names(dados)[ncol(dados)] <- "Desempenho"
     if(summary){
-      summ = data.frame(Info = c("Número total de respondentes", "Número de respondentes por item", "Desvio-Padrão por item", "Desempenho médio do grupo gabarito",
+      summ <- data.frame(Info = c("Número total de respondentes", "Número de respondentes por item", "Desvio-Padrão por item", "Desempenho médio do grupo gabarito",
                                  "Desempenho médio do grupo não-gabarito","Quantile .27 do gabarito","Quantile .73 do gabarito"))
-      summ = cbind(summ, matrix(NA, nrow = nrow(summ), ncol = nrow(mapa)))
-      names(summ) = c("Info", paste0("IT", 1:nrow(mapa)))
+      summ <- summ %>% cbind(matrix(NA, nrow = nrow(summ), ncol = nrow(mapa)))
+      names(summ) <- c("Info", paste0("IT", 1:nrow(mapa)))
     }
     for(it in 1:nrow(TCT)){
       respOn = dadosCorr[[it + 3]] %>% is.na %>% not
-      desemp <- dados$Desempenho[respOn] - (rep(itemResto, sum(respOn)) * dadosCorr[[it + 3]][respOn])
+      desemp <- dados$Desempenho - (rep(itemResto, length(dados$Desempenho)) * dadosCorr[[it + 3]])
       if(sdpop){
-        sd = sqrt(sum(dados$PESO[respOn]*((desemp - weighted.mean(desemp, dados$PESO[respOn]))^2)) / sum(dados$PESO[respOn]))
+        sd <- sqrt(sum(dados$PESO[respOn] * ((desemp[respOn] - weighted.mean(desemp[respOn], dados$PESO[respOn]))^2)) / sum(dados$PESO[respOn]))
       }else{
-        sd = wt.sd(desemp, dados$PESO[respOn])
+        sd <- wt.sd(desemp[respOn], dados$PESO[respOn])
       }
       if(summary){
-        summ[1, it + 1] = nrow(dadosCorr)
-        summ[2, it + 1] = sum(respOn)
-        summ[3, it + 1] = sd
+        summ[1, it + 1] <- nrow(dadosCorr)
+        summ[2, it + 1] <- sum(respOn)
+        summ[3, it + 1] <- sd
       }
-      u = desemp %>% wt.mean(dados$PESO[respOn])
+      u <- wt.mean(desemp[respOn], dados$PESO[respOn])
       for(alt in Alts){
-        respAlt = respOn & dados[[it + 3]] == alt
-        pAlt <- dados[respOn, it + 3] %>% equals(alt) %>% wt.mean(dadosCorr$PESO[respOn])
-        TCT[it, paste0("Perc", alt)] = pAlt %>% round(arred)
-        u1 = desemp %>% wt.mean(dadosCorr$PESO[respAlt])
+        respAlt <- respOn & (dados[[it + 3]] == alt)
+        pAlt <- wt.mean(dados[respOn, it + 3] == alt, dadosCorr$PESO[respOn])
+        TCT[it, paste0("Perc", alt)] <- pAlt %>% round(arred)
+        u1 <- wt.mean(desemp[respAlt], dadosCorr$PESO[respAlt])
         if(!pbis){
-          z = pAlt %>% qnorm %>% dnorm
-          u0 = desemp[!respAlt & respOn] %>% wt.mean(dadosCorr$PESO[!respAlt & respOn])
-          TCT[it, paste0("Bis", alt)] = pAlt %>% multiply_by(1 - pAlt) %>% multiply_by(u1 - u0) %>% divide_by(sd * z) %>% round(arred)
+          z <- pAlt %>% qnorm %>% dnorm
+          u0 <- wt.mean(desemp[!respAlt & respOn], dadosCorr$PESO[!respAlt & respOn])
+          TCT[it, paste0("Bis", alt)] <- ((pAlt * (1 - pAlt) * (u1 - u0)) / (sd * z)) %>% round(arred)
         }else{
-          TCT[it, paste0("Bis", alt)] = u1 %>% subtract(u) %>% divide_by(sd) %>% multiply_by(sqrt(TCT[it, paste0("Perc", alt)] / (1 - TCT[it, paste0("Perc", alt)]))) %>% round(arred)
+          TCT[it, paste0("Bis", alt)] <- (((u1 - u) / sd) * sqrt(pAlt / (1 - pAlt))) %>% round(arred)
         }
         if(alt == TCT$Gabarito[it]){
-          quantile = desemp[respOn] %>% quantile(probs = c(.27, .73), type = 6)
-          grupo = ifelse(desemp <= quantile[1], 1, ifelse(desemp >= quantile[2], 3, 2))
-          TCT$Abai[it] = dadosCorr[respOn & grupo == 1, it + 3] %>% wt.mean(dadosCorr$PESO[respOn & grupo == 1]) %>% round(arred)
-          TCT$Acim[it] = dadosCorr[respOn & grupo == 3, it + 3] %>% wt.mean(dadosCorr$PESO[respOn & grupo == 3]) %>% round(arred)
-          TCT$Dif[it] = TCT[it, paste0("Perc", alt)]
-          TCT$Bis[it] = TCT[it, paste0("Bis", alt)] 
+          quantile <- desemp[respOn] %>% quantile(probs = c(.27, .73), type = 6)
+          grupo <- ifelse(desemp <= quantile[1], 1, ifelse(desemp >= quantile[2], 3, 2))
+          TCT$Abai[it] <- dadosCorr[respOn & grupo == 1, it + 3] %>% wt.mean(dadosCorr$PESO[respOn & grupo == 1]) %>% round(arred)
+          TCT$Acim[it] <- dadosCorr[respOn & grupo == 3, it + 3] %>% wt.mean(dadosCorr$PESO[respOn & grupo == 3]) %>% round(arred)
+          TCT$Dif[it] <- TCT[it, paste0("Perc", alt)]
+          TCT$Bis[it] <- TCT[it, paste0("Bis", alt)] 
           if(summary){
-            summ[4, it + 1] = u1
-            summ[5, it + 1] = u0  
-            summ[6, it + 1] = quantile[1]
-            summ[7, it + 1] = quantile[2]
+            summ[4, it + 1] <- u1
+            summ[5, it + 1] <- u0  
+            summ[6, it + 1] <- quantile[1]
+            summ[7, it + 1] <- quantile[2]
           }
         }
       }
-      if(!is.na(TCT$Bis[it]) & (sum(TCT[it, paste0("Bis", Alts)][paste0("Bis", Alts) != paste0("Bis", TCT$Gabarito[it])] > crit[2], na.rm = T) > 0 | TCT$Bis[it] < crit[1]))
+      bisDist <- TCT[it, paste0("Bis", Alts)][paste0("Bis", Alts) != paste0("Bis", TCT$Gabarito[it])]
+      if(!is.na(TCT$Bis[it]) & (TCT$Bis[it] < crit[1] | any(bisDist > crit[2], na.rm = T) | any((TCT$Bis[it] - bisDist) < crit[3], na.rm = T)))
         TCT$Status[it] <- "CheckBiss"
     }
-    TCT$Disc = TCT$Acim %>% subtract(TCT$Abai) %>% round(arred)
+    TCT$Disc <- (TCT$Acim - TCT$Abai) %>% round(arred)
     if(pbis)
-      names(TCT)[substr(names(TCT), 1, 3) == "Bis"] = paste0("P", names(TCT)[substr(names(TCT), 1, 3) == "Bis"])
-    alphaResto <- alpha(dadosCorr[-c(1:3, ncol(dadosCorr))])
-    TCT$Alpha <- ifelse((alphaResto[[1]][[1]] - alphaResto[[2]][, 1]) > 0, "+", "-") %>% paste0(" (", round(alphaResto[[1]][[1]] - alphaResto[[2]][, 1], arred), ")")
+      names(TCT)[substr(names(TCT), 1, 3) == "Bis"] <- paste0("P", names(TCT)[substr(names(TCT), 1, 3) == "Bis"])
+    hSD <- as.vector(sapply(dadosCorr[-c(1:3, ncol(dadosCorr))], sd, na.rm = T)) > 0
+    alphaResto <- dadosCorr[c(rep(F, 3), hSD, F)] %>% alpha
+    TCT$Alpha <- NA
+    TCT$Alpha[hSD] <- ifelse((alphaResto[[1]][[1]] - alphaResto[[2]][, 1]) >= 0, "+", "-") %>% paste0(" (", round(abs(alphaResto[[1]][[1]] - alphaResto[[2]][, 1]), arred), ")")
     if(summary)
-      TCT = list(tct = TCT, summary = summ)
+      TCT <- list(tct = TCT, summary = summ)
     return(TCT)
   }
 
