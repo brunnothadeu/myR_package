@@ -407,9 +407,11 @@ dif.plot <-
       }
     }
     SCO = lapply(split(SCO$SCO, SCO$Grupo), quantile, probs = c(probs[1], probs[2]))
+    if(is.null(files))
+      files <- names(EXP)
     for(i in seq_along(EXP)){
       if(is.null(shinyDemo)){
-        pdf(file = paste0(getwd(), "/", dir.create,"/", paste0(names(EXP)[i], "_DIF.pdf")), width = width, height = height)
+        pdf(file = paste0(getwd(), "/", dir.create,"/", paste0(files[i], ".pdf")), width = width, height = height)
       }else{
         i = shinyDemo
       }
