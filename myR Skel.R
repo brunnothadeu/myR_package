@@ -17,7 +17,7 @@ loadpkg <-
 vetor.estendido <-
   function(dados, bib, b.len){
     if(sum(dados$CAD %in% names(bib)) == 0)
-      stop("Os valores de Cadernos entre o banco e o BIB não conferem.")
+      stop("Os valores de Cadernos entre o banco e o BIB nÃ£o conferem.")
     nblocos = bib %>% unlist %>% unique %>% length
     aux = data.frame(matrix(NA, nrow = nrow(dados), ncol = b.len * nblocos))
     for(cad in names(bib)){
@@ -74,8 +74,8 @@ tct <-
     TCT[1:ncol(mapa)] = mapa
     names(dadosCorr)[ncol(dadosCorr)] = names(dados)[ncol(dados)] = "Desempenho"
     if(summary){
-      summ = data.frame(Info = c("Número total de respondentes", "Número de respondentes por item", "Desvio-Padrão por item", "Desempenho médio do grupo gabarito",
-                                 "Desempenho médio do grupo não-gabarito","Quantile .27 do gabarito","Quantile .73 do gabarito"))
+      summ = data.frame(Info = c("NÃºmero total de respondentes", "NÃºmero de respondentes por item", "Desvio-PadrÃ£o por item", "Desempenho mÃ©dio do grupo gabarito",
+                                 "Desempenho mÃ©dio do grupo nÃ£o-gabarito","Quantile .27 do gabarito","Quantile .73 do gabarito"))
       summ = cbind(summ, matrix(NA, nrow = nrow(summ), ncol = nrow(mapa)))
       names(summ) = c("Info", paste0("IT", 1:nrow(mapa)))
     }
@@ -137,7 +137,7 @@ agi.plot <-
   function(dados, desemp, redGab = NULL, main = "AGI PLOT", files = NULL, xlab = "Escore", ylab = "Percentual de Respostas", Alts = c(".", "*", "A", "B", "C", "D", "E"), col.agi = NULL, cex = c(3, 1.2, rep(0.7, 5)), density = TRUE, smooth = NULL, dir.create = "AGI", xlim = NULL, width = 9.6, height = 6.8, ext = "PDF", shinyDemo = NULL){
     if(length(unique(desemp)) > 45){
       desemp %<>% cut_interval(45) %>% as.character %>% substr(., 2, nchar(.)-1) %>% strsplit(",") %>% lapply(FUN = function(x) mean(as.numeric(x))) %>% unlist
-      if(xlab == "Escore") xlab = "Proficiência"
+      if(xlab == "Escore") xlab = "ProficiÃªncia"
       is.prof = TRUE
     }else{
       is.prof = FALSE
@@ -255,7 +255,7 @@ pos.model <-
 cci.plot <-
   function(pars, main = "CCI PLOT", SCO = NULL, breaks = c(-4, 4, 0.1), files = NULL, dir.create = "CCI", width = 9.6, height = 6.8, shinyDemo = NULL){
     if(sum(names(pars) %in% c("Codigo", "a", "b", "c")) < 4)
-      stop("Os nomes das variaveis no arquivo de parametros devem seguite a seguinte nomenclatura: (Codigo, a, b, c, a01), sendo este ultimo opcional para o plot da curva de informação.")
+      stop("Os nomes das variaveis no arquivo de parametros devem seguite a seguinte nomenclatura: (Codigo, a, b, c, a01), sendo este ultimo opcional para o plot da curva de informaÃ§Ã£o.")
     points = seq(breaks[1], breaks[2], breaks[3])
     if(length(main) == 1) main %<>% rep(nrow(pars))
     if(is.null(shinyDemo))
@@ -274,7 +274,7 @@ cci.plot <-
       infos$Prob = pars$c[it] + ((1 - pars$c[it]) / (1 + exp(-1.7 * pars$a[it] * (infos$Hab - pars$b[it]))))
       if(any(names(pars) == "a01"))
         infos$Info = (pars$a01[it] ^ 2) * (1 - infos$Prob) * (((infos$Prob - pars$c[it]) / (1 - pars$c[it])) ^ 2) / infos$Prob
-      plot(infos$Hab, infos$Prob, type = "n", xlim = c(breaks[1], breaks[2]), ylim = seq(0, 1), xlab = "Proficiência", ylab = "Probabilidade", main = ifelse(!is.null(SCO), "", main[it]))
+      plot(infos$Hab, infos$Prob, type = "n", xlim = c(breaks[1], breaks[2]), ylim = seq(0, 1), xlab = "ProficiÃªncia", ylab = "Probabilidade", main = ifelse(!is.null(SCO), "", main[it]))
       with(infos, lines(Hab, Prob, lwd = 2, col = "black"))
       with(infos, lines(Hab, Info, lwd = 2, col = "red"))
       abline(h = 0.65, lty = 2)
@@ -381,7 +381,7 @@ checkDIF <-
     }
     DIF = data.frame(matrix(DIF[-1, ], ncol = 5, byrow = FALSE), stringsAsFactors = F); names(DIF) = c("Item", "Grupo1", "Grupo2", "Ponto", "DIF")
     DIF$Ponto <- as.numeric(DIF$Ponto); DIF$DIF <- as.numeric(DIF$DIF)
-    Ajuste = data.frame(Ajuste[-1, ], stringsAsFactors = F); names(Ajuste) = c("Item", "Grupo", "Ponto", "DIF")
+    Ajuste = data.frame(matrix(Ajuste[-1, ], ncol = 4, byrow = FALSE), stringsAsFactors = F); names(Ajuste) = c("Item", "Grupo", "Ponto", "DIF")
     Ajuste$Ponto <- as.numeric(Ajuste$Ponto); Ajuste$DIF <- as.numeric(Ajuste$DIF)
     return(list(DIF = unique(DIF), Ajuste = unique(Ajuste)))
   }
@@ -397,7 +397,7 @@ dif.plot <-
     if(is.null(main))
       main = names(EXP)
     if(length(main) < length(EXP) & is.null(shinyDemo))
-      stop("Dimensões inválidas para main")
+      stop("DimensÃµes invÃ¡lidas para main")
     if(!is.null(density)){
       habs = SCO
       if(density == "points"){
@@ -422,7 +422,7 @@ dif.plot <-
       }
       temp = EXP[[i]]
       nqp = nrow(temp) / (temp$Grupo %>% unique %>% length)
-      plot(temp$POINT[1:nqp], seq(0, 1, length = nqp), type = "n", main = ifelse(is.null(density), main[i], ""), xlab = "Proficiência", ylab = "Percentual de Respostas", ylim = c(0, 1), xlim = c(xlim[1], xlim[2]))
+      plot(temp$POINT[1:nqp], seq(0, 1, length = nqp), type = "n", main = ifelse(is.null(density), main[i], ""), xlab = "ProficiÃªncia", ylab = "Percentual de Respostas", ylim = c(0, 1), xlim = c(xlim[1], xlim[2]))
       lines(temp$POINT[1:nqp], temp$MODEL.PROP[1:nqp], lwd = 2)
       for(g in unique(temp$Grupo)){
         lines(temp$POINT[temp$Grupo == g], temp$PROPORTION[temp$Grupo == g], col = col.dif[g], lwd = 2)
@@ -489,15 +489,15 @@ checkDIF2 <-
   }
 
 all.plot <- 
-  function(dados, desemp, pars, EXP, SCO, xlab = c("Escore", "Proficiência", "Proficiência"), ylab = c("Percentual de Respostas", "Probabilidade", "Percentual de Respostas"), main = "ALL PLOT",
+  function(dados, desemp, pars, EXP, SCO, xlab = c("Escore", "ProficiÃªncia", "ProficiÃªncia"), ylab = c("Percentual de Respostas", "Probabilidade", "Percentual de Respostas"), main = "ALL PLOT",
            files = NULL, redGab = NULL, xlim.agi = NULL, smooth = NULL, Alts = c(".", "*", "A", "B", "C", "D", "E"), col.agi = NULL, cex = c(3, 1.2, rep(0.7, 5)),
            breaks = c(-4, 4, 0.1), groups = NULL, probs = c(0.05, 0.95), col.dif = NULL, xlim.dif = c(-4, 4), dir.create = "Full Plot", width = 9.6, height = 6.8, shinyDemo = NULL){
     if(ncol(dados) != length(EXP) | ncol(dados) != nrow(pars))
-      stop("O número de colunas em dados não confere com o número de linhas em pars e extensão em EXP")
+      stop("O nÃºmero de colunas em dados nÃ£o confere com o nÃºmero de linhas em pars e extensÃ£o em EXP")
     if(length(main) == 1) main %<>% rep(ncol(dados))
     if(length(unique(desemp)) > 50){
       desemp %<>% cut_interval(30) %>% as.character %>% substr(., 2, nchar(.)-1) %>% strsplit(",") %>% lapply(FUN = function(x) mean(as.numeric(x))) %>% unlist
-      if(xlab[1] == "Escore") xlab[1] = "Proficiência"
+      if(xlab[1] == "Escore") xlab[1] = "ProficiÃªncia"
     }
     if(is.null(col.agi))
       col.agi = distinctColorPalette(length(Alts))
